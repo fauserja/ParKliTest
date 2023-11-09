@@ -403,7 +403,8 @@ fig = px.scatter_mapbox(dfLangerFrageBogenNestScore,
                         color_continuous_scale= px.colors.cyclical.IceFire, 
                         zoom=5, height=400
                        )
-fig.update_layout(mapbox_style="stamen-terrain")
+#fig.update_layout(mapbox_style="stamen-terrain")
+fig.update_layout(mapbox_style="open-street-map")
 fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 
 dfGroupBy = dfLangerFrageBogenNestScore.groupby('gstypology').count()['id']

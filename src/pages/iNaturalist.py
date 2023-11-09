@@ -128,7 +128,8 @@ def restorPage_boxSelect(filtered_df, df):
                 color_continuous_scale= px.colors.cyclical.IceFire, 
                 zoom=10, height=400
             )
-            figSpecies.update_layout(mapbox_style="stamen-terrain")
+            #figSpecies.update_layout(mapbox_style="stamen-terrain")
+            figSpecies.update_layout(mapbox_style=" open-street-map")
             figSpecies.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
             
         
@@ -265,7 +266,8 @@ def restorPage_map(df):
             color_discrete_sequence=["black"],
             zoom=10, height=400
         )
-    fig.update_layout(mapbox_style="stamen-terrain")
+    #fig.update_layout(mapbox_style="stamen-terrain")
+    fig.update_layout(mapbox_style="open-street-map")
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     
     
@@ -496,7 +498,8 @@ def update_map(n_clicks, city, latLonCorrection, data):
             color_discrete_sequence=["black"],
             zoom=10, height=300
         )
-        fig.update_layout(mapbox_style="stamen-terrain")
+        #fig.update_layout(mapbox_style="stamen-terrain")
+        fig.update_layout(mapbox_style="open-street-map")
         fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
          
         #return html.Div([ dcc.Graph(figure = fig)]), data     
@@ -584,7 +587,8 @@ def update_box_select(selectedData, data, selectedDataState):
                 color_continuous_scale= px.colors.cyclical.IceFire, 
                 zoom=10, height=400
             )
-            figSpecies.update_layout(mapbox_style="stamen-terrain")
+            #figSpecies.update_layout(mapbox_style="stamen-terrain")
+            figSpecies.update_layout(mapbox_style="open-street-map")
             figSpecies.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
             
         

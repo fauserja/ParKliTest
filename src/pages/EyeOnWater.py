@@ -85,95 +85,174 @@ def parse_contentCSV(contents, filename_csv):
     except Exception as e:
         print(e)
 
-############################################################################################################################################
+#########################################################################################################################################
+def delete_all_files_in_folder(folder_path):
+    """
+    Löscht alle Dateien in einem gegebenen Verzeichnis.
+    """
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Error deleting {file_path}. Reason: {e}")
 
+
+############################################################################################################################################
+# Funktion zum Herunterladen des Bildes
+def download_image(url, save_folder):
+    # Check if the image already exists in the folder
+    filename = os.path.join(save_folder, os.path.basename(url))
+    if os.path.exists(filename):
+        return filename
+
+    # If not, download and save the image
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open(filename, 'wb') as f:
+            f.write(response.content)
+        return filename
+    else:
+        return None
+
+
+#########################################################################################################################################
 def cleanData(df):
     
   
     try:
         
          
-            print(len(df))
             
-            
-            
+            #Abstand zwischen beobachteten und berechneter Wert, wenn dieser zu groß löschen aus dem Dataframe
             dfStreuung = df.loc[(abs(df['fu_value'] - df['fu_processed']) < 2.0)]
             print(len(dfStreuung))
-            
+
             df = dfStreuung.copy()
+            df = df.dropna(subset=['p_cloud_cover'])        
+            print(len(dfStreuung))
             
             #path = "../../assets/Bilder"
             # Aktueller Ordner (/src/pages)
             current_directory = os.getcwd()
-
+            print(current_directory)
+            
             # Pfad zum Zielordner (/src/assets/Bilder)
             path = os.path.join(current_directory, 'urlTest/src/assets', 'Bilder')
-
-            df["total_pixels"] = 0
-            df["color_pixels"] = 0
-
-            # # # Schleife über alle Dateien im Ordner
-            for filename in os.listdir(path):
-                
-                if filename.endswith(".png"):
-                # Bild öffnen
-                    img = Image.open(os.path.join(path, filename))
-                    # Gesamtanzahl der Pixel
-                    total_pixels = img.width * img.height
-
-                    # Anzahl der Farbpixel
-                    color_pixels = len(set(img.getdata()))
-                    
-                        
-                    row = df.loc[df['image'].str.contains(filename)]
-                    
-                    # Überprüfe, ob eine Zeile gefunden wurde
-                    if not row.empty:
-                    #Pixelzahl und Anzahl der Farbpixel in DataFrame speichern
-                        df.loc[row.index, "total_pixels"] = total_pixels
-                        df.loc[row.index, "color_pixels"] = color_pixels
-                        
-            df = df.dropna(subset=['p_cloud_cover'])
-            df_copy = df.copy()
-            df_copy.drop_duplicates(['day', 'total_pixels', 'color_pixels'], keep='first', inplace=True)
-            df =df_copy.copy()
-            #df.drop_duplicates(subset=['day', 'total_pixels', 'color_pixels'], keep='first', inplace=True)
-            df = df.drop(df[(df['total_pixels'] == 0) & (df['color_pixels'] == 0)].index)
-            print(len(df))
             
-            # overcastSunny = 'sunny'
-            p_cloud_cover = 0.0
-
-            df["Flag"] = "Placeholder"
-            df["fu_processed_wacodi_processed"] = 0
-
-            # # # # Schleife über alle Dateien im Ordner
-            for filename in os.listdir(path):
-                
-                if filename.endswith(".png"):
-                    
-                    row = df.loc[df['image'].str.contains(filename)]
-                    
-                    if not row.empty:
-            # #              #print(row)
-                        p_cloud_cover = row['p_cloud_cover'].values[0]
-
-                        if p_cloud_cover <= 50.0:
-                            overcastSunny = 'overcast'
-                        else:
-                            overcastSunny = 'sunny'
-
-                        findWaterColour = find_water_colour(os.path.join(path, filename), overcastSunny)
-
-                        successFindWaterColour = findWaterColour['success']
-                        fuProcessedWacodiProcessed = findWaterColour['FUvalue']
-                        
-                        df.loc[row.index, "Flag"] = successFindWaterColour
-                        df.loc[row.index, "fu_processed_wacodi_processed"] = fuProcessedWacodiProcessed
-                        
-            print(len(df))
+            print(path)
             
-                         
+            save_folder_CSV = os.path.join(current_directory, 'urlTest/src/assets', 'CSVPictureDate')
+            
+            # Ordner zum Speichern der Bilder
+            
+            #save_folder_CSV = './CSVPictureDate'
+            # Create the save folder if it doesn't exist
+            if not os.path.exists(save_folder_CSV):
+                os.makedirs(save_folder_CSV)
+            # Create the save folder if it doesn't exist
+            if not os.path.exists(path):
+                os.makedirs(path)
+                
+            # Überprüfen, ob bereits eine CSV-Datei existiert
+            csv_path = os.path.join(save_folder_CSV, 'data.csv')
+            if os.path.exists(csv_path):
+                # Lade das DataFrame aus der CSV-Datei
+                df_existing = pd.read_csv(csv_path)
+                dfnew_entries = df[~df['image'].isin(df_existing['image'])]
+                #df_updated = pd.concat([df_existing, new_entries], ignore_index=True)
+                #df_updated.to_csv('data.csv', index=False)  
+            else:
+                dfnew_entries = df.copy()
+            
+            
+            if not dfnew_entries.empty:
+                dfnew_entries['image_path'] = dfnew_entries['image'].apply(lambda url: download_image(url, path))
+
+                dfnew_entries["total_pixels"] = 0
+                dfnew_entries["color_pixels"] = 0
+
+                # # # Schleife über alle Dateien im Ordner
+                for filename in os.listdir(path):
+                    
+                    if filename.endswith(".png"):
+                    # Bild öffnen
+                        img = Image.open(os.path.join(path, filename))
+                        # Gesamtanzahl der Pixel
+                        total_pixels = img.width * img.height
+
+                        # Anzahl der Farbpixel
+                        color_pixels = len(set(img.getdata()))
+                        
+                            
+                        row = dfnew_entries.loc[dfnew_entries['image'].str.contains(filename)]
+                        
+                        # Überprüfe, ob eine Zeile gefunden wurde
+                        if not row.empty:
+                        #Pixelzahl und Anzahl der Farbpixel in DataFrame speichern
+                            dfnew_entries.loc[row.index, "total_pixels"] = total_pixels
+                            dfnew_entries.loc[row.index, "color_pixels"] = color_pixels
+                            
+                dfnew_entries = dfnew_entries.dropna(subset=['p_cloud_cover'])
+                df_copy = dfnew_entries.copy()
+                #Delete Duplicates 
+                df_copy.drop_duplicates(['day', 'total_pixels', 'color_pixels'], keep='first', inplace=True)
+                dfnew_entries =df_copy.copy()
+                #Drop tuples weithout picture
+                dfnew_entries = dfnew_entries.drop(dfnew_entries[(dfnew_entries['total_pixels'] == 0) & (dfnew_entries['color_pixels'] == 0)].index)
+                print(len(df))
+                
+                # overcastSunny = 'sunny'
+                p_cloud_cover = 0.0
+
+                dfnew_entries["Flag"] = "Placeholder"
+                dfnew_entries["fu_processed_wacodi_processed"] = 0
+
+                # # # # Schleife über alle Dateien im Ordner
+                for filename in os.listdir(path):
+                    
+                    if filename.endswith(".png"):
+                        
+                        row = dfnew_entries.loc[df['image'].str.contains(filename)]
+                        
+                        if not row.empty:
+                # #              #print(row)
+                            p_cloud_cover = row['p_cloud_cover'].values[0]
+
+                            if p_cloud_cover <= 50.0:
+                                overcastSunny = 'overcast'
+                            else:
+                                overcastSunny = 'sunny'
+
+                            findWaterColour = find_water_colour(os.path.join(path, filename), overcastSunny)
+
+                            successFindWaterColour = findWaterColour['success']
+                            fuProcessedWacodiProcessed = findWaterColour['FUvalue']
+                            
+                            dfnew_entries.loc[row.index, "Flag"] = successFindWaterColour
+                            dfnew_entries.loc[row.index, "fu_processed_wacodi_processed"] = fuProcessedWacodiProcessed
+                            
+            
+            
+            
+            if os.path.exists(csv_path):
+                # Lade das DataFrame aus der CSV-Datei
+                #df_existing = pd.read_csv(csv_path)
+                #dfnew_entries = df[~df['image'].isin(df_existing['image'])]
+                df_updated = pd.concat([df_existing, dfnew_entries], ignore_index=True)
+                df_updated.to_csv(csv_path, index=False)
+                df = df_updated.copy()
+            else:
+                #dfnew_entries = df.copy()
+                dfnew_entries.to_csv(csv_path)
+                df = dfnew_entries.copy()
+                #dfAll = pd.read_csv(csv_path, sep=',')
+                #print(len(dfAll))
+                #new_entries['image_path'] = new_entries['image'].apply(lambda url: download_image(url, save_folder))
+
+            delete_all_files_in_folder(path)
+            
             dfTrue = df.loc[(df['Flag'] == True)]
             
             print(len(dfTrue))
@@ -359,7 +438,8 @@ def update_output(list_of_contents, list_of_names, dataEyeonWater):
             color_discrete_sequence=["black"],
             zoom=10, height=300
         )
-        fig.update_layout(mapbox_style="stamen-terrain")
+        #fig.update_layout(mapbox_style="stamen-terrain")
+        fig.update_layout(mapbox_style="open-street-map")
         fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
         
         return fig, dataEyeonWater

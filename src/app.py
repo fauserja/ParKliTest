@@ -14,7 +14,7 @@ from dash_bootstrap_components._components.Container import Container
 
 #PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
 
-dirapp = dash.Dash(
+app = dash.Dash(
     __name__, 
     use_pages=True, 
     external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP], 
@@ -24,7 +24,6 @@ dirapp = dash.Dash(
     ],
 )
 server = app.server
-
 
 
 navbar = dbc.Navbar(
