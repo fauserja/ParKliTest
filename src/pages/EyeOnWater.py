@@ -56,25 +56,26 @@ def parse_contentCSV(contents, filename_csv):
             #     io.StringIO(decoded.decode('utf-8')))
             #df = pd.read_csv(
              #    io.StringIO(decoded.decode('unicode_escape')))
-            df = pd.read_csv(filename_csv, sep=',' , encoding = 'unicode_escape', skipinitialspace=True, skiprows=1)
+            #df = pd.read_csv(filename_csv, sep=',' , encoding = 'unicode_escape', skipinitialspace=True, skiprows=1)
             #df = pd.read_csv(filename_csv, sep=',', skiprows=1)
+            df = pd.read_csv(io.StringIO(decoded.decode('unicode_escape')))
             
           
             print(len(df))
             
             
             df.to_csv("new_file.csv")
-            df = pd.read_csv("new_file.csv", sep=',')
+            df = pd.read_csv("new_file.csv", sep=',',skiprows=1)
             
             # first check whether file exists or not
             # calling remove method to delete the csv file
             # in remove method you need to pass file name and type
-            file = 'new_file.csv'
-            if(os.path.exists(file) and os.path.isfile(file)):
-                os.remove(file)
-                print("file deleted")
-            else:
-                print("file not found")
+            # file = 'new_file.csv'
+            # if(os.path.exists(file) and os.path.isfile(file)):
+            #     os.remove(file)
+            #     print("file deleted")
+            # else:
+            #     print("file not found")
             #df=df.rename(columns={'Unnamed': 'id'}, inplace=True)
             print(df.head())
            
@@ -258,8 +259,8 @@ def cleanData(df):
             print(len(dfTrue))
             
             dfTrue=dfTrue.drop(columns=['active', 'last_update','update_count','input_date','apk_user_n_code','geom', 'image.1', 'nickname.1'])
-            dfTrue.to_csv("new_file.csv")
-            dfTrue = pd.read_csv("new_file.csv", sep=',')
+            #dfTrue.to_csv("new_file.csv")
+            #dfTrue = pd.read_csv("new_file.csv", sep=',')
             #df=df.rename(columns={'Unnamed': 'id'}, inplace=True)
             print(dfTrue.head())
            

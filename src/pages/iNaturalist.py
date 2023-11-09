@@ -93,7 +93,11 @@ def download_inaturalist_data(min_lat, max_lat, min_lon, max_lon):
 #########################################################################################################################################
 #Lesen der Invasive Arten aus Excel Datei
 def excel_invasive_species():
-    dfInvasiveArten  = pd.read_excel('C:/Users/janfa/reutlingen-university.de/ParKli - Dokumente/General/AP2_Ko_Produktion/AP2.3_Erzeugen_von_Trainingsdatensätzen/iNaturalist/2023_02_14__IAS_Liste_BW_Kurzfassung_Internet_LUBW.xlsx', skiprows=1)
+    
+    current_directory = os.getcwd()
+    path = os.path.join(current_directory, 'urlTest/src/assets/')
+    
+    dfInvasiveArten  = pd.read_excel(path+'2023_02_14__IAS_Liste_BW_Kurzfassung_Internet_LUBW.xlsx', skiprows=1)
     return dfInvasiveArten
 
 #######################################################################################################################################
