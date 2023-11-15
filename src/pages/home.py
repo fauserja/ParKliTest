@@ -44,57 +44,54 @@ dash.register_page(__name__,
 df = px.data.gapminder()
 
 
-card_sales = dbc.Card(
-  [
-      dbc.CardHeader("Sales"),
+
+url = f"https://api.inaturalist.org/v1/observations?project_id=parkli"
+response = requests.get(url)
+if response.status_code == 200:
+    data = response.json()
+    #data["total_results"]
+else:
+    print("Fehler bei der Anfrage:", response.status_code)
+    
+
+
+
+
+
+
+card_iNaturalist = dbc.Card(
+  
+      #dbc.CardHeader("Anzahl Beobachtungen iNaturalist ParKli"),
       dbc.CardBody(
         [
-            html.H1([html.I(className="bi bi-currency-dollar me-2"), "Sales"], className="text-nowrap"),
-            html.H3("$106.7M"),
-            html.Div(
-                [
-                    html.I("5.8%", className="bi bi-caret-up-fill text-success"),
-                    " vs LY",
-                ]
-            ),
+            html.H1([html.I(className="bi bi-search"), "Beobachtungen iNaturalist ParKli"], className="text-nowrap"),
+            html.H3(data["total_results"]),
+          
         ], className="border-start border-success border-5"
     ),
-    
-  ],
-    
+    className="text-center m-4 shadow bg-light rounded",
   
 )
 
 
-card_profit = dbc.Card(
+card_GreenSpaceHack = dbc.Card(
     dbc.CardBody(
         [
-            html.H1([html.I(className="bi bi-bank me-2"), "Profit"], className="text-nowrap"),
-            html.H3("$8.3M",),
-            html.Div(
-                [
-                    html.I("12.3%", className="bi bi-caret-down-fill text-danger"),
-                    " vs LY",
-                ]
-            ),
+            html.H1([html.I(className="bi bi-question-square"), "Anzahl Fragebögen Greenspace Hack"], className="text-nowrap"),
+            html.H3("100"),
         ], className="border-start border-danger border-5"
     ),
     className="text-center m-4 shadow bg-light rounded",
 )
 
 
-card_orders = dbc.Card(
+card_EyeOnWater = dbc.Card(
     dbc.CardBody(
         [
-            html.H1([html.I(className="bi bi-cart me-2"), "Orders"], className="text-nowrap"),
-            html.H3("91.4K"),
-            html.Div(
-                [
-                    html.I("10.3%", className="bi bi-caret-up-fill text-success"),
-                    " vs LY",
-                ]
-            ),
-        ], className="border-start border-success border-5"
+            html.H1([html.I(className="bi bi-water"), "Anzahl Beobachtungen EyeOnWater"], className="text-nowrap"),
+            html.H3("100"),
+    
+        ], className="border-start border-secondary border-5"
     ),
     className="text-center m-4 shadow bg-white rounded",
 )
@@ -106,9 +103,9 @@ layout = html.Div(
       
       dbc.Row(
         [
-          dbc.Col(card_sales), 
-          dbc.Col(card_profit), 
-          dbc.Col(card_orders),
+          dbc.Col(card_iNaturalist = dbc.Card), 
+          dbc.Col(card_GreenSpaceHack), 
+          dbc.Col(card_EyeOnWater),
         ],
         #fluid=True,
       ),
