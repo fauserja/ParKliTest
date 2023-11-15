@@ -3,7 +3,7 @@ dash_bootstrap_components==1.4.0
 geopy==2.3.0
 matplotlib==3.7.2
 numpy==1.24.3
-openpyxl-3.0.10
+openpyxl-3.0.9
 pandas==1.5.3
 Pillow==10.1.0
 plotly==5.9.0
