@@ -103,7 +103,7 @@ layout = html.Div(
       
       dbc.Row(
         [
-          dbc.Col(card_iNaturalist = dbc.Card), 
+          dbc.Col(card_iNaturalist), 
           dbc.Col(card_GreenSpaceHack), 
           dbc.Col(card_EyeOnWater),
         ],
