@@ -136,15 +136,33 @@ def cleanData(df):
             
             #path = "../../assets/Bilder"
             # Aktueller Ordner (/src/pages)
-            current_directory = os.getcwd()
-            print(current_directory)
+            #current_directory = os.getcwd()
+            #print(current_directory)
             
             # Pfad zum Zielordner (/src/assets/Bilder)
-            path = os.path.join(current_directory, 'urlTest/src/assets', 'Bilder')
+            #path = os.path.join(current_directory, 'urlTest/src/assets', 'Bilder')
             
-            print(path)
+            #print(path)
             
-            save_folder_CSV = os.path.join(current_directory, 'urlTest/src/assets', 'CSVPictureDate')
+            #save_folder_CSV = os.path.join(current_directory, 'urlTest/src/assets', 'CSVPictureDate')
+            
+            
+            
+             # Navigiert eine Ebene nach oben und dann in den Ordner 'assets'
+            relative_path = os.path.join('..', 'assets', 'Bilder')
+    
+            # Vollständiger Pfad zur Datei, ausgehend vom aktuellen Skriptverzeichnis
+            path = os.path.join(os.path.dirname(__file__), relative_path)
+            
+             # Navigiert eine Ebene nach oben und dann in den Ordner 'assets'
+            relative_path = os.path.join('..', 'assets', 'CSVPictureDate')
+    
+            # Vollständiger Pfad zur Datei, ausgehend vom aktuellen Skriptverzeichnis
+            save_folder_CSV = os.path.join(os.path.dirname(__file__), relative_path)
+            
+            
+            
+            
             
             # Ordner zum Speichern der Bilder
             

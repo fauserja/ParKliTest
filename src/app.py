@@ -160,6 +160,7 @@ def toggle_navbar_collapse(n, is_open):
 
 
 if __name__ == "__main__":
+
     app.run_server(debug=False)
 
 # PLOTLY_LOGO = "https://images.plot.ly/logo/new-branding/plotly-logomark.png"
