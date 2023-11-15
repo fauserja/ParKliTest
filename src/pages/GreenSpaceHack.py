@@ -294,6 +294,8 @@ dfLangerFrageBogen[selected_columns] = dfLangerFrageBogen[selected_columns].fill
 dfLangerFrageBogen= dfLangerFrageBogen.eval('US_SCR_sum = US1 + US2 + US3 + US4 + US6 + US7 + US8 + US9 + US10 + US11')
 dfLangerFrageBogen[['US1', 'US2', 'US3', 'US4', 'US6', 'US7', 'US8', 'US9', 'US10', 'US11', 'US_SCR_sum']].head()
 
+#reenSpaceHack-Data = dfLangerFrageBogen.to_dict('records')
+
 # 3. Calculate domain scores out of 100
 
 dfLangerFrageBogen= dfLangerFrageBogen.eval('AC_WT = (AC_SCR_sum/9) *100')
