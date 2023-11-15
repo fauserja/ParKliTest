@@ -94,10 +94,19 @@ def download_inaturalist_data(min_lat, max_lat, min_lon, max_lon):
 #Lesen der Invasive Arten aus Excel Datei
 def excel_invasive_species():
     
-    current_directory = os.getcwd()
-    path = os.path.join(current_directory, 'urlTest/src/assets/')
+    #current_directory = os.getcwd()
+    #path = os.path.join(current_directory, 'urlTest/src/assets/')
+    # Navigiert eine Ebene nach oben und dann in den Ordner 'assets'
+    relative_path = os.path.join('..', 'assets', '2023_02_14__IAS_Liste_BW_Kurzfassung_Internet_LUBW.xlsx')
     
-    dfInvasiveArten  = pd.read_excel(path+'2023_02_14__IAS_Liste_BW_Kurzfassung_Internet_LUBW.xlsx', skiprows=1)
+    # Vollständiger Pfad zur Datei, ausgehend vom aktuellen Skriptverzeichnis
+    file_path = os.path.join(os.path.dirname(__file__), relative_path)
+    
+    try:
+        dfInvasiveArten = pd.read_excel(file_path, skiprows=1)
+    except FileNotFoundError:
+        print(f"Datei nicht gefunden: {file_path}")
+    #dfInvasiveArten  = pd.read_excel(file_path, skiprows=1)
     return dfInvasiveArten
 
 #######################################################################################################################################
