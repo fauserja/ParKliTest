@@ -117,7 +117,7 @@ card_GreenSpaceHack = dbc.Card(
 card_EyeOnWater = dbc.Card(
     dbc.CardBody(
         [
-            html.H4([html.I(className="bi bi-water"), "Anzahl Beobachtungen EyeOnWater"], className="text-nowrap"),
+            html.H4([html.I(className="bi bi-water"), " Anzahl Beobachtungen EyeOnWater"], className="text-nowrap"),
             html.H5(len(df_existing)),
     
         ], className="border-start border-secondary border-5"

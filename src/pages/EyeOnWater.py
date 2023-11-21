@@ -561,6 +561,7 @@ def update_box_select(selectedData, dataEyeonWater, cleanedDataEyeonWater):
             fig = px.box(filtered_df, x='month_year', y=['fu_processed', 'fu_value'], points='all', title='Boxplot')
             
             df_ph =  filtered_df.loc[(filtered_df['p_ph'] > 0)]
+            
             df_SecchiDisk =filtered_df.loc[(((filtered_df['sd_depth']) > 0) & ((filtered_df['sd_depth'] < 1)))] 
             #df_SecchiDisk = round(df_SecchiDisk,2)
             
@@ -579,6 +580,14 @@ def update_box_select(selectedData, dataEyeonWater, cleanedDataEyeonWater):
             fu_value_mean = round(fu_value_mean,2)
             fu_processed_mean = filtered_df['fu_processed'].mean()
             fu_processed_mean=round(fu_processed_mean,2)
+            ph_value_mean = df_ph['p_ph'].mean()
+            ph_value_mean  = round(ph_value_mean ,2)
+            sd_depth_value_mean = df_SecchiDisk['sd_depth'].mean()
+            sd_depth_value_mean = round(sd_depth_value_mean,2)
+            
+            
+            
+            
             
             
             return html.Div(
@@ -720,7 +729,7 @@ def update_box_select(selectedData, dataEyeonWater, cleanedDataEyeonWater):
 
                                                                 html.P(children=["pH-Werte"], className="card-subtitle h5 text-center"),
                                                                 html.Br(),
-                                                                html.P(children=[df_ph['p_ph'].mean()], className="card-subtitle text-n h5 text-center"),
+                                                                html.P(children=[ph_value_mean], className="card-subtitle text-n h5 text-center"),
                                                             ],
                                                             className="border-start border-secondary border-5",
                                                         ),
@@ -737,7 +746,7 @@ def update_box_select(selectedData, dataEyeonWater, cleanedDataEyeonWater):
                                                                 #html.P(children=["Anzahl der Beobachtungen im ausgewählten Bereich: ",len(filtered_df)], className="card-subtitle text-nowrap h6 text-center"),
                                                                 html.P(children=["Secchi-Disk Wert"], className="card-subtitle h5 text-center"),
                                                                 html.Br(),
-                                                                html.P(children=[df_SecchiDisk['sd_depth'].mean()], className="card-subtitle  h5 text-center"),
+                                                                html.P(children=[sd_depth_value_mean], className="card-subtitle  h5 text-center"),
                                                             ],
                                                                 className="border-start border-secondary border-5",
                                                         ),
@@ -809,9 +818,37 @@ def update_box_select(selectedData, dataEyeonWater, cleanedDataEyeonWater):
                                     ),
                                     
                                 ],
-                                width={"size": 12},
+                                width={"size": 6},
                                 className = "h-100 class",
                             ),
+                            
+                            dbc.Col(
+                                [
+                                    dbc.Card(
+                                        dbc.CardBody(
+                                            [
+                                                html.H5("Sichtiefen-/pH-Wert-Messung", className="card-title text-center"),
+                                                #html.H5("Box-Plot", className="card-title text-center"),
+                                                html.Br(),
+                                                dcc.Dropdown(
+                                                    id="dropdownSd_pH",
+                                                    options=['Sichtiefenmessung', 'pH-Wert-Messung'],
+                                                    value='Sichtiefenmessung',
+                                                ),
+                                                html.Br(),
+                                                dcc.Graph(id='sd_ph_fig', figure = fig),
+                                                #html.Br(),
+                                            ],
+                                            className="border-start border-secondary border-5",
+                                        ),
+                                        className="m-2 shadow bg-white rounded h-100 class",
+                                    ),
+                                    
+                                ],
+                                width={"size": 6},
+                                className = "h-100 class",
+                            ),
+                            
                             
                         ],
                     ),
@@ -841,7 +878,7 @@ def update_box_select(selectedData, dataEyeonWater, cleanedDataEyeonWater):
                                 width={"size": 6},
                             ),
                             
-                              dbc.Col(
+                            dbc.Col(
                                 [
                                     dbc.Card(
                                         dbc.CardBody(
@@ -901,6 +938,33 @@ def update_distribution(value, cleanedDataEyeonWater):
     elif value == 'Scatter-Plot':
         
         fig= px.scatter(df, x='month_year', y=['fu_processed', 'fu_value'], title='Scatter-Plot')
+        
+        return fig
+    
+    return dash.no_update
+####################################################################################################################################
+
+@callback(
+    Output('sd_ph_fig', 'figure'),
+    Input('dropdownSd_pH', 'value'),
+    Input('cleanedEyeOnWater-Data','cleanedDataEyeonWater'),
+    prevent_initial_call=True
+    
+)
+def update_sdDepth_phValue(value, cleanedDataEyeonWater):
+    
+    df = pd.DataFrame(cleanedDataEyeonWater)
+      
+    if value == 'Sichtiefenmessung':
+        df_SecchiDisk =df.loc[(((df['sd_depth']) > 0) & ((df['sd_depth'] < 1)))] 
+        #fig = px.box(df_SecchiDisk, x='month_year', y=['fu_processed', 'fu_value'], points='all', title='Boxplot') 
+        fig= px.scatter(df_SecchiDisk, x='month_year', y='sd_depth', title='Sichtiefenmessung')
+        
+        return fig
+    elif value == 'pH-Wert-Messung':
+        
+        df_ph =  df.loc[(df['p_ph'] > 0)]
+        fig= px.scatter(df_ph, x='month_year', y='p_ph', title='pH-Wert-Messung')
         
         return fig
     
