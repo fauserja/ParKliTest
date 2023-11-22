@@ -109,182 +109,6 @@ def excel_invasive_species():
     #dfInvasiveArten  = pd.read_excel(file_path, skiprows=1)
     return dfInvasiveArten
 
-#######################################################################################################################################
-def restorPage_boxSelect(filtered_df, df):
-    
-      #fig = px.box(filtered_df, x='month', y=['fu_processed', 'fu_value'], points='all')
-            species_counts = filtered_df.groupby('taxon.preferred_common_name').size().reset_index(name='observation_count')
-            print(species_counts)
-            print(len(species_counts))
-            fig = px.bar(species_counts, y='observation_count', x='taxon.preferred_common_name', text='observation_count')
-            fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
-            fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-            #return dcc.Graph(figure=fig)
-            #return fig
-            
-            dfInvasiveSpecies = excel_invasive_species()
-            
-            merged_dfInvasiveSpecies = pd.merge(filtered_df['taxon.name'], dfInvasiveSpecies['Wissenschaftlicher Name'], left_on='taxon.name', right_on='Wissenschaftlicher Name')
-            print(merged_dfInvasiveSpecies.head(30))
-            
-            # Gruppieren und Anzahl der Beobachtungen pro invasive Spezies berechnen
-            merged_dfInvasiveSpeciesCount = merged_dfInvasiveSpecies.groupby('taxon.name').size().reset_index(name='Count Invasive Species')
-            
-            
-            figSpecies = px.scatter_mapbox(
-                filtered_df, 
-                lat="lat", 
-                lon="lon",
-                hover_name="taxon.preferred_common_name",
-                hover_data=["taxon.preferred_common_name", "time_observed_at", "place_guess", 'quality_grade'],
-                color="taxon.preferred_common_name",
-                color_continuous_scale= px.colors.cyclical.IceFire, 
-                zoom=10, height=400
-            )
-            #figSpecies.update_layout(mapbox_style="stamen-terrain")
-            figSpecies.update_layout(mapbox_style=" open-street-map")
-            figSpecies.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-            
-        
-            return html.Div([
-        
-                # dbc.Row([
-                #     dbc.Col([
-                #         html.Br(),
-                #         html.H3('Auswertung der Beobachtungen für den markierten Bereich', style={'textAlign': 'center'}),
-                #     ], width={"size": 12})
-                # ]),  
-                
-                html.Br(),
-                html.Br(),
-                
-                dbc.Row([
-                    
-                    dbc.Col(
-                        [
-                            dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.H3("Übersicht über die Beobachtungen", className="card-title text-center text-nowrap"),
-                                        html.Br(),
-                                        html.P("Anzahl der Beobachtungen Gesamt:", className="card-subtitle"),
-                                        html.P(len(df)),
-                                        html.P("Anzahl der Beobachtungen im ausgewählten Bereich:", className="card-subtitle"),
-                                        html.P(len(filtered_df)),
-                                        html.P("Anzahl der unterschiedlichen Arten im ausgewählten Bereich:", className="card-subtitle"),
-                                        html.P(len(species_counts)),
-                                        html.P("Anzahl der Beobachtungen von invasiven Arten im ausgewählten Bereich:", className="card-subtitle"),
-                                        html.P(len(merged_dfInvasiveSpecies)),
-                                        html.P("Anzahl der unterschiedlichen invasiven Arten im ausgewählten Bereich:", className="card-subtitle"),
-                                        html.P(len(merged_dfInvasiveSpecies['taxon.name'].unique())), 
-                                            
-                                    ]
-                                        
-                                ),
-                                className="m-4 shadow bg-light rounded",
-                            ),                     
-                        #], width={"size": 4}
-                    #),
-                        ]
-                    ),
-                    dbc.Col(
-                        [
-                            dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.H3("Übersicht invasive Arten", className="card-title text-center text-nowrap"),
-                                        html.Br(),
-                                        dash_table.DataTable(
-                                            merged_dfInvasiveSpeciesCount.to_dict('records'),
-                                            [{'name': i, 'id': i} for i in merged_dfInvasiveSpeciesCount.columns],
-                                            #page_size=10,
-                                            filter_action="native",
-                                            sort_action="native",
-                                            sort_mode="single",
-                                            column_selectable="single",
-                                            fixed_rows={'headers': True},
-                                            style_table={'margin': '5px', 'height': '200px'},
-                                            style_cell={'textAlign': 'left', 'padding': '1px', 'minWidth': 30, 'maxWidth': 50, 'width': 50}
-                                        ),
-                                        
-                                    ]
-                                    
-                                ),
-                                className="m-4 shadow bg-light rounded",
-                            ),                     
-                        ]#, 
-                        #width={"size": 4}
-                    ),
-                    dbc.Col(
-                        [
-                            dbc.Card(
-                                dbc.CardBody(
-                                    [
-                                        html.H3("Übersicht Arten", className="card-title text-center text-nowrap"),
-                                        dcc.Graph(figure = figSpecies),
-                                        html.Br(),
-                                        
-                                    ]
-                                    
-                                ),
-                                className="m-4 shadow bg-light rounded",
-                            ),                     
-                        ]#, width={"size":5}
-                    ),
-                ]),
-                
-                html.Br(),
-                html.Br(),
-                
-                dbc.Row([
-                    dbc.Col([
-    
-                        dcc.Graph(figure = fig),
-                        html.Br(),
-                    ], width={"size": 12})
-                ]),  
-                
-                #html.H5(filename),
-                #html.H6(datetime.datetime.fromtimestamp(date)),
-                
-
-                html.Hr(),
-                html.Br(),
-                
-                dbc.Row([
-                    dbc.Col([
-                        dash_table.DataTable(
-                            species_counts.to_dict('records'),
-                            [{'name': i, 'id': i} for i in species_counts.columns],
-                            #page_size=10,
-                            filter_action="native",
-                            sort_action="native",
-                            sort_mode="single",
-                            column_selectable="single",
-                            fixed_rows={'headers': True},
-                            style_table={'margin': '10px', 'height': '350px'},
-                            style_cell={'textAlign': 'left', 'padding': '1px', 'minWidth': 30, 'maxWidth': 50, 'width': 50}
-                        ),
-                    ], width=12)
-                ]),  
-            ])
-##############################################################################################################################################
-def restorPage_map(df):
-    
-    fig = px.scatter_mapbox(df, 
-            lat="lat", 
-            lon="lon",
-            hover_name="taxon.preferred_common_name",
-            hover_data=["id","taxon.preferred_common_name", "time_observed_at", "place_guess", 'quality_grade'],
-            color_discrete_sequence=["black"],
-            zoom=10, height=400
-        )
-    #fig.update_layout(mapbox_style="stamen-terrain")
-    fig.update_layout(mapbox_style="open-street-map")
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-    
-    
-    return fig
 ##########################################################################################################################################
 
 card_Location = dbc.Card(
@@ -315,7 +139,7 @@ card_Location = dbc.Card(
 card_UpdateMap = dbc.Card(
     dbc.CardBody(
         [
-            html.H1([html.I(className="bi bi-map me-2"), "Auswahl Daten"], className="text-nowrap text-center"),
+            html.H1([html.I(className="bi bi-map me-2"), "Auswahl Daten"], className="text-center"),
             html.Br(),
             #html.Div(id='map'),
             dcc.Graph(id='map', figure={}),
@@ -325,7 +149,6 @@ card_UpdateMap = dbc.Card(
     ),
     className="m-2 shadow bg-white rounded",
 )
-
 
 
 
@@ -542,52 +365,73 @@ def update_box_select(selectedData, data, selectedDataState):
         
         try:
             # Extrahiere die ausgewählten Daten
-            print(selectedData)
-            print(type(selectedData))
+            #print(selectedData)
+            #print(type(selectedData))
             
             
             
             points = selectedData['points']
             selected_df = pd.DataFrame(points)
-            print(selected_df.head())
-            selected_df.info()
+            #print(selected_df.head())
+            #selected_df.info()
             #print(selected_df['hovertext'])
             listHovertext= selected_df['customdata'].values.tolist()
-            print(type(listHovertext))
-            print(listHovertext)
+            #print(type(listHovertext))
+            #print(listHovertext)
             
             #extraction der id aus Liste
             new_list = [list[0] for list in listHovertext]
             
-            print(new_list)
+            #print(new_list)
             df = pd.DataFrame(data)
-            print(df)
-            df.info()
+            #print(df)
+            #df.info()
             
             #Filtern der ausgewählten ID aus Dataframe
             boolean_series = df.id.isin(new_list)
             filtered_df = df[boolean_series]
-            print(filtered_df)
-            print(len(filtered_df))
-            selectedDataState=filtered_df.to_dict()
-                    
-            #fig = px.box(filtered_df, x='month', y=['fu_processed', 'fu_value'], points='all')
-            species_counts = filtered_df.groupby('taxon.preferred_common_name').size().reset_index(name='observation_count')
-            print(species_counts)
-            print(len(species_counts))
-            fig = px.bar(species_counts, y='observation_count', x='taxon.preferred_common_name', text='observation_count')
-            fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
-            fig.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
-            #return dcc.Graph(figure=fig)
-            #return fig
+            #print(filtered_df)
+            #print(len(filtered_df))
+          
+            #dfInvasiveSpecies = excel_invasive_species()
             
-            dfInvasiveSpecies = excel_invasive_species()
-            
-            merged_dfInvasiveSpecies = pd.merge(filtered_df['taxon.name'], dfInvasiveSpecies['Wissenschaftlicher Name'], left_on='taxon.name', right_on='Wissenschaftlicher Name')
-            print(merged_dfInvasiveSpecies.head(30))
+            #merged_dfInvasiveSpecies = pd.merge(filtered_df['taxon.name'], dfInvasiveSpecies['Wissenschaftlicher Name'], left_on='taxon.name', right_on='Wissenschaftlicher Name')
+            #print(merged_dfInvasiveSpecies.head(30))
             
             # Gruppieren und Anzahl der Beobachtungen pro invasive Spezies berechnen
-            merged_dfInvasiveSpeciesCount = merged_dfInvasiveSpecies.groupby('taxon.name').size().reset_index(name='Count Invasive Species')
+            #merged_dfInvasiveSpeciesCount = merged_dfInvasiveSpecies.groupby('taxon.name').size().reset_index(name='Count Invasive Species')
+            
+            # Ersetzen von NaN-Werten durch 0 und Umwandeln von True/False in 1/0
+            filtered_df['threatened_numeric'] = filtered_df['taxon.threatened'].fillna(0).astype(int)
+            filtered_df['introduced_numeric'] = filtered_df['taxon.introduced'].fillna(0).astype(int)
+            
+            selectedDataState=filtered_df.to_dict()
+            
+            # Zählen, wie oft Arten als bedroht markiert sind (taxon.threatened == True)
+            threatened_count = filtered_df['threatened_numeric'].sum()
+                       
+            
+            # Zählen, wie oft der Wert "research" in der Spalte 'quality_grade' vorkommt
+            research_count = (filtered_df['quality_grade'] == 'research').sum()
+            
+            
+            # Zählen, wie oft Arten als invasive markiert sind (taxon.introduced == True)
+            invasive_count = filtered_df['introduced_numeric'].sum()
+            
+            # Zählen der einzigartigen bedrohten Arten
+            unique_threatened_species_count = filtered_df[filtered_df['threatened_numeric'] == 1]['taxon.name'].nunique()
+
+            # Zählen der einzigartigen invasiven Arten
+            unique_invasive_species_count = filtered_df[filtered_df['introduced_numeric'] == 1]['taxon.name'].nunique()
+            
+            
+            #Anzahl der Species Bar Plot
+            species_counts = df.groupby('taxon.preferred_common_name').size().reset_index(name='observation_count')
+            fig_invasive_threatened_species = px.bar(species_counts, y='observation_count', x='taxon.preferred_common_name', text='observation_count')
+            fig_invasive_threatened_species.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+            fig_invasive_threatened_species.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+        
+            
             
             
             figSpecies = px.scatter_mapbox(
@@ -604,17 +448,26 @@ def update_box_select(selectedData, data, selectedDataState):
             figSpecies.update_layout(mapbox_style="open-street-map")
             figSpecies.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
             
+            
+            # Zählen der Beobachtungen in jeder Spezieskategorie
+            iconic_taxon_counts = filtered_df['taxon.iconic_taxon_name'].value_counts()
+
+            # Erstellen des Pie Charts
+            fig_taxonCounts_qualityGrade = px.pie(iconic_taxon_counts, 
+                    names=iconic_taxon_counts.index, 
+                    values=iconic_taxon_counts.values, 
+                    title='Verteilung der Beobachtungen nach Spezieskategorien',
+                    labels={'names': 'Kategorie', 'values': 'Anzahl der Beobachtungen'})
+            # Anpassen der Textanzeige
+            fig_taxonCounts_qualityGrade.update_traces(textposition='inside', textinfo='percent+label')
+            
+            
+            
+            
         
             return html.Div([
                 
               
-                # dbc.Row([
-                #     dbc.Col([
-                #         html.Br(),
-                #         html.H3('Auswertung der Beobachtungen für den markierten Bereich', style={'textAlign': 'center'}),
-                #     ], width={"size": 12})
-                # ]),  
-                
                 html.Br(),
                 html.Br(),
                 
@@ -689,7 +542,7 @@ def update_box_select(selectedData, data, selectedDataState):
                                                         #html.P(children=["Beobachtungen von invasiven Arten im ausgewählten Bereich: ",len(merged_dfInvasiveSpecies)], className="card-subtitle text-nowrap h6 text-center"),
                                                         html.P(children=["Invasive Arten"], className="card-subtitle h5 text-center"),
                                                         html.Br(),
-                                                        html.P(children=[len(merged_dfInvasiveSpecies)], className="card-subtitle h5 text-center"),
+                                                        html.P(children=[invasive_count], className="card-subtitle h5 text-center"),
                                                     ],
                                                     className="border-start border-success border-5",
                                                 ),
@@ -712,90 +565,72 @@ def update_box_select(selectedData, data, selectedDataState):
                                                         [
                                                             html.P(children=["Unterschiedliche invasive Arten"], className="card-subtitle h5 text-center"),
                                                             html.Br(),
-                                                            html.P(children=[len(merged_dfInvasiveSpecies['taxon.name'].unique())], className="card-subtitle h5 text-center"),
+                                                            html.P(children=[unique_invasive_species_count], className="card-subtitle h5 text-center"),
                                                         ],
                                                         className="border-start border-success border-5",
                                                     ),
                                                     className="m-2 shadow bg-white rounded h-100 class",
                                                 )
                                             ],
-                                            width={"size": 12},
+                                            width={"size": 6},
+                                        ),
+                                    dbc.Col(
+                                            [
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.P(children=["Bedrohte Arten"], className="card-subtitle h5 text-center"),
+                                                            html.Br(),
+                                                            html.P(children=[threatened_count], className="card-subtitle h5 text-center"),
+                                                        ],
+                                                        className="border-start border-success border-5",
+                                                    ),
+                                                    className="m-2 shadow bg-white rounded h-100 class",
+                                                )
+                                            ],
+                                            width={"size": 6},
                                         ),
                                     ],
                                 ),
+                                html.Br(),
+                                dbc.Row(
+                                    [
                                     
-                         
-                            
-                            # dbc.Row([
+                                    dbc.Col(
+                                            [
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.P(children=["Unterschiedliche bedrohte Arten"], className="card-subtitle h5 text-center"),
+                                                            html.Br(),
+                                                            html.P(children=[unique_threatened_species_count], className="card-subtitle h5 text-center"),
+                                                        ],
+                                                        className="border-start border-success border-5",
+                                                    ),
+                                                    className="m-2 shadow bg-white rounded h-100 class",
+                                                )
+                                            ],
+                                            width={"size": 6},
+                                        ),
+                                    dbc.Col(
+                                            [
+                                                dbc.Card(
+                                                    dbc.CardBody(
+                                                        [
+                                                            html.P(children=["Beobachtungen Forschungsqualität"], className="card-subtitle h5 text-center"),
+                                                            html.Br(),
+                                                            html.P(children=[research_count], className="card-subtitle h5 text-center"),
+                                                        ],
+                                                        className="border-start border-success border-5",
+                                                    ),
+                                                    className="m-2 shadow bg-white rounded h-100 class",
+                                                )
+                                            ],
+                                            width={"size": 6},
+                                        ),
+                                    ],
+                                ),
                                 
-                            #     dbc.Card(
-                            #         dbc.CardBody(
-                            #             [
-                            #                html.P(children=["Anzahl der unterschiedlichen Arten im ausgewählten Bereich: ", len(species_counts)],className="card-subtitle text-nowrap h5 text-center"),
-                            #             ],
-                            #             className="border-start border-success border-5 text-nowrap",
-                            #         ),
-                            #         className="m-4 shadow bg-white rounded h-100 class",
-                            #     )
-                            # ]),
-                            #  dbc.Row([
-                                
-                            #     dbc.Card(
-                            #         dbc.CardBody(
-                            #             [
-                            #                html.P(children=["Anzahl der Beobachtungen von invasiven Arten im ausgewählten Bereich: ",len(merged_dfInvasiveSpecies)], className="card-subtitle text-nowrap h5 text-center"),
-                            #             ],
-                            #             className="border-start border-success border-5 text-nowrap",
-                            #         ),
-                            #         className="m-4 shadow bg-white rounded h-100 class",
-                            #     )
-                            # ]),
-                            #    dbc.Row([
-                                
-                            #     dbc.Card(
-                            #         dbc.CardBody(
-                            #             [
-                            #                html.P(children=["Anzahl der unterschiedlichen invasiven Arten im ausgewählten Bereich: ", len(merged_dfInvasiveSpecies['taxon.name'].unique())], className="card-subtitle text-nowrap h5 text-center"),
-                            #             ],
-                            #             className="border-start border-success border-5 text-nowrap",
-                            #         ),
-                            #         className="m-4 shadow bg-white rounded h-100 class",
-                            #     ),
-                            # ]),
-        
-                        
-                            # dbc.Card(
-                            #     dbc.CardBody(
-                            #         [
-                            #             html.H5("Übersicht über die Beobachtungen", className="card-title text-center text-nowrap"),
-                            #             html.Br(),
-                            #             html.Br(),
-                            #             html.Br(),
-                            #             #html.H3("Anzahl der Beobachtungen Gesamt:", className="card-subtitle text-nowrap"),
-                            #             html.P(children=["Anzahl der Beobachtungen Gesamt: ", len(df)], className="card-subtitle text-nowrap"),
-                            #             html.Br(),
-                            #             html.Br(),
-                            #             html.P(children=["Anzahl der Beobachtungen im ausgewählten Bereich: ",len(filtered_df)], className="card-subtitle"),
-                            #             html.Br(),
-                            #             html.Br(),
-                            #             #html.P(len(filtered_df)),
-                            #             html.P(children=["Anzahl der unterschiedlichen Arten im ausgewählten Bereich: ", len(species_counts)],className="card-subtitle"),
-                            #             html.Br(),
-                            #             html.Br(),
-                            #             #html.P(len(species_counts)),
-                            #             html.P(children=["Anzahl der Beobachtungen von invasiven Arten im ausgewählten Bereich: ",len(merged_dfInvasiveSpecies)], className="card-subtitle"),
-                            #             #html.P(len(merged_dfInvasiveSpecies)),
-                            #             html.Br(),
-                            #             html.Br(),
-                            #             html.P(children=["Anzahl der unterschiedlichen invasiven Arten im ausgewählten Bereich: ", len(merged_dfInvasiveSpecies['taxon.name'].unique())], className="card-subtitle"),
-                            #             #html.P(len(merged_dfInvasiveSpecies['taxon.name'].unique())), 
-                                            
-                            #         ],
-                            #         className="border-start border-success border-5 text-nowrap h6 text-justify",
-                                        
-                            #     ),
-                            #     className="m-2 shadow bg-white rounded h-100 class",
-                            # ),
                                         
                             ], 
                             width={"size": 4},
@@ -808,20 +643,17 @@ def update_box_select(selectedData, data, selectedDataState):
                             dbc.Card(
                                 dbc.CardBody(
                                     [
-                                        html.H5("Übersicht invasive Arten", className="card-title text-center text-nowrap"),
+                                        html.H5("Verteilung Beobachtung Qualitätsgrad/Spezieskategorien ", className="card-title text-center"),
+                                        
                                         html.Br(),
-                                        dash_table.DataTable(
-                                            merged_dfInvasiveSpeciesCount.to_dict('records'),
-                                            [{'name': i, 'id': i} for i in merged_dfInvasiveSpeciesCount.columns],
-                                            #page_size=10,
-                                            filter_action="native",
-                                            sort_action="native",
-                                            sort_mode="single",
-                                            column_selectable="single",
-                                            fixed_rows={'headers': True},
-                                            style_table={'margin': '5px', 'height': '200px'},
-                                            style_cell={'textAlign': 'left', 'padding': '1px', 'minWidth': 30, 'maxWidth': 50, 'width': 50}
+                                        dcc.Dropdown(
+                                            id="dropdown_taxonCounts_qualityGrade",
+                                            options=['Qualitätsgrad', 'Spezieskategorien'],
+                                            value='Spezieskategorien',
                                         ),
+                                        html.Br(),
+                                        dcc.Graph(id='taxonCounts_qualityGrade', figure = fig_taxonCounts_qualityGrade),
+                                        #html.Br(),                                       
                                         
                                     ],
                                      className="border-start border-success border-5",
@@ -836,9 +668,16 @@ def update_box_select(selectedData, data, selectedDataState):
                             dbc.Card(
                                 dbc.CardBody(
                                     [
-                                        html.H5("Übersicht Arten", className="card-title text-center text-nowrap"),
-                                        dcc.Graph(figure = figSpecies),
-                                        #html.Br(),
+                                        html.H5("Geografische Übersicht Arten", className="card-title text-center"),
+                                        html.Br(),
+                                        dcc.Dropdown(
+                                            id="dropdown_map_invasive_threatened_species",
+                                            options=['Übersicht Arten', 'Invasive Arten', 'Bedrohte Arten'],
+                                            value='Übersicht Arten',
+                                        ), 
+                                        html.Br(),                        
+                                        dcc.Graph(id='map_invasive_threatened_species', figure = figSpecies),
+                                        #html.Br()
                                         
                                     ],
                                      className="border-start border-success border-5",
@@ -853,84 +692,224 @@ def update_box_select(selectedData, data, selectedDataState):
                 
                 html.Br(),
                 html.Br(),
-                
-                dbc.Row([
-                    dbc.Col([
+                ######
+                dbc.Row(
+                    [
+                    dbc.Col(
+                        [
+                            dbc.Card(
+                                dbc.CardBody(
+                                    [
+                                        html.H5("Übersicht Beobachtungen", className="card-title text-center"),
+                                        html.Br(),
+                                        
+                                        dcc.Dropdown(
+                                            id="dropdown_invasive_threatened_species",
+                                            options=['Übersicht Anzahl Arten', 'Invasive Arten', 'Bedrohte Arten'],
+                                            value='Übersicht Anzahl Arten',
+                                        ),
+                                        dcc.Graph(id='invasive_threatened_species', figure = fig_invasive_threatened_species),
+                                        
+                                    ],
+                                     className="border-start border-success border-5",
+                                    
+                                ),
+                                className="m-3 shadow bg-white rounded h-100 class",
+                            ),                     
     
-                        dcc.Graph(figure = fig),
-                        html.Br(),
-                    ], width={"size": 12})
-                ]),  
+                            
+                        ], 
+                        width={"size": 12})
+                    ]
+                ),  
                 
                 #html.H5(filename),
                 #html.H6(datetime.datetime.fromtimestamp(date)),
                 
 
-                html.Hr(),
+                #html.Hr(),
                 html.Br(),
-                
+                html.Br(),
                 dbc.Row([
                     dbc.Col([
-                        dash_table.DataTable(
-                            species_counts.to_dict('records'),
-                            [{'name': i, 'id': i} for i in species_counts.columns],
-                            #page_size=10,
-                            filter_action="native",
-                            sort_action="native",
-                            sort_mode="single",
-                            column_selectable="single",
-                            fixed_rows={'headers': True},
-                            style_table={'margin': '10px', 'height': '350px'},
-                            style_cell={'textAlign': 'left', 'padding': '1px', 'minWidth': 30, 'maxWidth': 50, 'width': 50}
-                        ),
+                        
+                         dbc.Card(
+                                dbc.CardBody(
+                                    [
+                                        html.H5("Tabelle Beobachtungen", className="card-title text-center"),
+                                        html.Br(),
+                                        dash_table.DataTable(
+                                            species_counts.to_dict('records'),
+                                            [{'name': i, 'id': i} for i in species_counts.columns],
+                                            #page_size=10,
+                                            filter_action="native",
+                                            sort_action="native",
+                                            sort_mode="single",
+                                            column_selectable="single",
+                                            fixed_rows={'headers': True},
+                                            style_table={'margin': '10px', 'height': '350px'},
+                                            style_cell={'textAlign': 'left', 'padding': '1px', 'minWidth': 30, 'maxWidth': 50, 'width': 50}
+                                        ),
+                                        
+                                    ],
+                                     className="border-start border-success border-5",
+                                    
+                            ),
+                            className="m-3 shadow bg-white rounded h-100 class",
+                    ),  
+                        
+                       
                     ], width=12)
-                ]),  
+                ]),
+                html.Br(),
+                html.Br(),  
             ]), selectedDataState
         except Exception as e:
             print(e)
             
-# # # # Callback-Funktion für das Aktualisieren der Seite
-# @callback(
-#     Output('map', 'figure'),
-#     Output('box-select', 'children'),
-#     Input('loadSession-button', 'n_clicks'),
-#     State('city-input', 'value'),
-#     State('memory-output', 'data'),
-#     State('selectedData-State', 'selectedDataState') 
-# )
-# def restorePage(n_clicks,city, data, selectedDataState):
-    
-#     print(data)
-#     print(type(data))
-    
-#     if data and city and selectedDataState:
-#          # Extrahiere die ausgewählten Daten
-#         print(selectedDataState)
-#         print(type(selectedDataState))
-            
-                      
-#         #points = selectedDataState['points']
-#         filtered_df = pd.DataFrame(selectedDataState)
-#         # print(selected_df.head())
-#         # selected_df.info()
-#         # listHovertext= selected_df['customdata'].values.tolist()
-#         # #extraction der id aus Liste
-#         # new_list = [list[0] for list in listHovertext]
-            
-#         df = pd.DataFrame(data)
-               
-#         #Filtern der ausgewählten ID aus Dataframe
-#         # boolean_series = df.id.isin(new_list)
-#         # filtered_df = df[boolean_series]
-        
-#         fig = restorPage_map(df)
-        
-#         boxSelect = restorPage_boxSelect(filtered_df, df)        
-        
-        
-        
-#         return fig, boxSelect
-        
-        
+####################################################################################################################################
 
-#     return dash.no_update
+@callback(
+    Output('taxonCounts_qualityGrade', 'figure'),
+    Input('dropdown_taxonCounts_qualityGrade', 'value'),
+    Input('selectedData-State', 'selectedDataState'),
+    prevent_initial_call=True
+    
+)
+def update_taxonCounts_qualityGrade(value, selectedDataState):
+    
+    df = pd.DataFrame(selectedDataState)
+      
+    if value == 'Qualitätsgrad':
+        
+        # Zählen der Qualitätsgrade
+        quality_counts = df['quality_grade'].value_counts()
+
+        # Visualisierung erstellen
+        fig_taxonCounts_qualityGrade = px.pie(quality_counts, 
+            names=quality_counts.index, 
+            values=quality_counts.values, 
+            title='Verteilung der Qualität der Beobachtungen',
+            hover_data=[quality_counts.values])  # Fügt zusätzliche Daten zum Hover-Text hinzu
+            # Anpassen der Textanzeige
+        fig_taxonCounts_qualityGrade.update_traces(textposition='inside', textinfo='percent+label')
+        return fig_taxonCounts_qualityGrade
+    elif value == 'Spezieskategorien':
+        
+        # Zählen der Beobachtungen in jeder Spezieskategorie
+        iconic_taxon_counts = df['taxon.iconic_taxon_name'].value_counts()
+
+        # Erstellen des Pie Charts
+        fig_taxonCounts_qualityGrade = px.pie(iconic_taxon_counts, 
+                    names=iconic_taxon_counts.index, 
+                    values=iconic_taxon_counts.values, 
+                    title='Verteilung der Beobachtungen nach Spezieskategorien',
+                    labels={'names': 'Kategorie', 'values': 'Anzahl der Beobachtungen'})
+        # Anpassen der Textanzeige
+        fig_taxonCounts_qualityGrade.update_traces(textposition='inside', textinfo='percent+label')
+        
+   
+        return fig_taxonCounts_qualityGrade
+    
+    return dash.no_update
+
+########################################################################################################################
+
+@callback(
+    Output('invasive_threatened_species', 'figure'),
+    Input('dropdown_invasive_threatened_species', 'value'),
+    Input('selectedData-State', 'selectedDataState'),
+    prevent_initial_call=True
+    
+)
+def update_invasive_threatened_species(value, selectedDataState):
+    
+    df = pd.DataFrame(selectedDataState)
+    
+    # Zählen, wie oft jede Art als bedroht, invasiv oder einheimisch markiert wurde
+    grouped_df = df.groupby('taxon.name').agg({
+        'threatened_numeric': 'sum',
+        'introduced_numeric': 'sum',
+    }).reset_index()
+      
+    if value == 'Bedrohte Arten':
+        
+        # Balkendiagramm für bedrohte Arten
+        fig_invasive_threatened_species = px.bar(grouped_df, 
+            x='taxon.name', 
+            y='threatened_numeric', 
+            title='Anzahl bedrohter Arten',
+            labels={'taxon.threatened': 'Anzahl', 'taxon.name': 'Art'})
+        
+        return fig_invasive_threatened_species
+    
+    elif value == 'Invasive Arten':
+        
+        # Balkendiagramm für invasive Arten
+        fig_invasive_threatened_species = px.bar(grouped_df, 
+            x='taxon.name', 
+            y='introduced_numeric', 
+            title='Anzahl invasiver Arten',
+            labels={'taxon.introduced': 'Anzahl', 'taxon.name': 'Art'})
+        
+       
+        return fig_invasive_threatened_species
+    
+    elif value == 'Übersicht Anzahl Arten':
+        
+        species_counts = df.groupby('taxon.preferred_common_name').size().reset_index(name='observation_count')
+        fig_invasive_threatened_species = px.bar(species_counts, y='observation_count', x='taxon.preferred_common_name', text='observation_count')
+        fig_invasive_threatened_species.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+        fig_invasive_threatened_species.update_layout(uniformtext_minsize=8, uniformtext_mode='hide')
+        
+   
+        return fig_invasive_threatened_species
+    
+    return dash.no_update
+############################################################################################################################################
+@callback(
+    Output('map_invasive_threatened_species', 'figure'),
+    Input('dropdown_map_invasive_threatened_species', 'value'),
+    Input('selectedData-State', 'selectedDataState'),
+    prevent_initial_call=True
+    
+)
+def update_map_overview_invasive_threatened_species(value, selectedDataState):
+    
+    df = pd.DataFrame(selectedDataState)
+    
+    # Zählen, wie oft jede Art als bedroht, invasiv oder einheimisch markiert wurde
+   
+    if value != '':
+        
+        if value == 'Bedrohte Arten':
+            #Filter threatened Species
+            threatened_df = df[df['threatened_numeric'] == 1]
+            df = threatened_df.copy()
+            
+        elif value == 'Invasive Arten':
+        
+            invasive_df = df[df['introduced_numeric'] == 1]
+            df = invasive_df.copy()
+       
+        elif value == 'Übersicht Arten':
+            
+            print("")
+        
+        figSpecies = px.scatter_mapbox(
+                df, 
+                lat="lat", 
+                lon="lon",
+                hover_name="taxon.preferred_common_name",
+                hover_data=["taxon.preferred_common_name", "time_observed_at", "place_guess", 'quality_grade'],
+                color="taxon.preferred_common_name",
+                color_continuous_scale= px.colors.cyclical.IceFire, 
+                zoom=10, height=400
+            )
+            #figSpecies.update_layout(mapbox_style="stamen-terrain")
+        figSpecies.update_layout(mapbox_style="open-street-map")
+        figSpecies.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+   
+        return figSpecies
+    
+    return dash.no_update
