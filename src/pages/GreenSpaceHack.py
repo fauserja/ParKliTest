@@ -17,7 +17,6 @@ import os
 from geopy.distance import geodesic
 from PIL import Image
 import sys
-from lib.find_water_colour import find_water_colour
 
 import csv
 
@@ -162,6 +161,8 @@ dfLangerFrageBogen = dfLangerFrageBogen.replace({'AM3':{'Poor':1.0,'Schlecht':1.
 dfLangerFrageBogen = dfLangerFrageBogen.replace({'AM4':{'Poor':1.0,'Schlecht':1.0,'Ausreichend':2.0,'Adequate':2.0,'Gut':3.0,'Good':3.0,'Keine (habe aber welche erwartet)':0.0,'None_expected':0.0,'None expected':0.0,'Keine (habe keine erwartet)':2.0,'None_NOT_expected':2.0,'None NOT expected':2.0,'None (but expected some)':0.0,"None (didn't expect any)":2.0}})
 dfLangerFrageBogen = dfLangerFrageBogen.replace({'AM5':{'Poor':1.0,'Schlecht':1.0,'Ausreichend':2.0,'Adequate':2.0,'Gut':3.0,'Good':3.0,'Keine (habe aber welche erwartet)':0.0,'None_expected':0.0,'None expected':0.0,'Keine (habe keine erwartet)':2.0,'None_NOT_expected':2.0,'None NOT expected':2.0,'None (but expected some)':0.0,"None (didn't expect any)":2.0}})
 dfLangerFrageBogen = dfLangerFrageBogen.replace({'AM6':{'Poor':1.0,'Schlecht':1.0,'Ausreichend':2.0,'Adequate':2.0,'Gut':3.0,'Good':3.0,'Keine (habe aber welche erwartet)':0.0,'None_expected':0.0,'None expected':0.0,'Keine (habe keine erwartet)':2.0,'None_NOT_expected':2.0,'None NOT expected':2.0,'None (but expected some)':0.0,"None (didn't expect any)":2.0}})
+#AM7 nicht in NEST Score 
+dfLangerFrageBogen = dfLangerFrageBogen.replace({'AM7':{'Poor':1.0,'Schlecht':1.0,'Ausreichend':2.0,'Adequate':2.0,'Gut':3.0,'Good':3.0,'Keine (habe aber welche erwartet)':0.0,'None_expected':0.0,'None expected':0.0,'Keine (habe keine erwartet)':2.0,'None_NOT_expected':2.0,'None NOT expected':2.0,'None (but expected some)':0.0,"None (didn't expect any)":2.0}})
 dfLangerFrageBogen = dfLangerFrageBogen.replace({'AM9':{'Poor':1.0,'Schlecht':1.0,'Ausreichend':2.0,'Adequate':2.0,'Gut':3.0,'Good':3.0,'Keine (habe aber welche erwartet)':0.0,'None_expected':0.0,'None expected':0.0,'Keine (habe keine erwartet)':2.0,'None_NOT_expected':2.0,'None NOT expected':2.0,'None (but expected some)':0.0,"None (didn't expect any)":2.0}})
 dfLangerFrageBogen = dfLangerFrageBogen.replace({'AM10':{'Poor':1.0,'Schlecht':1.0,'Ausreichend':2.0,'Adequate':2.0,'Gut':3.0,'Good':3.0,'Keine (habe aber welche erwartet)':0.0,'None_expected':0.0,'None expected':0.0,'Keine (habe keine erwartet)':2.0,'None_NOT_expected':2.0,'None NOT expected':2.0,'None (but expected some)':0.0,"None (didn't expect any)":2.0}})
 
@@ -394,12 +395,13 @@ dfGstypology[['Overall NEST score']]
 #Alle Werte mit NEST Score DropNaN
 dfLangerFrageBogenNestScore = dfLangerFrageBogen.dropna(subset=['Overall NEST score'])
 dfLangerFrageBogenNestScore[['Overall NEST score']]
+#dfLangerFrageBogenNestScore.to_excel("Bereinigt_GreenSpaceHack.xlsx")
 
 fig = px.scatter_mapbox(dfLangerFrageBogenNestScore, 
                         lat="location.1", 
                         lon="location.0",
                         hover_name="name",
-                        hover_data=['name', 'gstypology'],
+                        hover_data=['id','Overall NEST score','name', 'gstypology'],
                         color="Overall NEST score",
                         size="Overall NEST score",
                         color_continuous_scale= px.colors.cyclical.IceFire, 
@@ -411,6 +413,20 @@ fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 
 dfGroupBy = dfLangerFrageBogenNestScore.groupby('gstypology').count()['id']
 figAnzahlFrageBogenProTypology = px.bar(dfGroupBy, height=500)
+
+
+# Erstellung der Heatmap
+figHeatMap = px.density_mapbox(dfLangerFrageBogenNestScore, 
+                        lat="location.1", 
+                        lon="location.0",
+                        z="Overall NEST score", 
+                        radius=10,
+                        zoom=5,
+                        mapbox_style="carto-positron",
+                        height=400)
+
+#figHeatMap.update_layout(mapbox_style="open-street-map")
+figHeatMap.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 
 ####################################################################################################################################
 
@@ -490,11 +506,35 @@ card_UpdateMapScatterMapbox = dbc.Card(
 card_BarPlot = dbc.Card(
     dbc.CardBody(
         [
-            html.H2([html.I(className="bi bi-reception-4 me-2"), "Anzahl Fragebögen pro Typology"], className="text-nowrap text-center"),
+            html.H2([html.I(id='heading_distribution_surveys_NEST',className="bi bi-reception-4 me-2"), "Verteilung Typology"], className="text-nowrap text-center"),
             html.Br(),
             #html.Div(id='map'),
             
-            dcc.Graph(id='scatter-mapbox',figure = figAnzahlFrageBogenProTypology),
+             dcc.Dropdown(
+                id="dropdown_distribution_surveys_NEST",
+                    options=['Fragebögen Typology', 'Streuung NEST pro Typology'],
+                    value='Fragebögen Typology',
+            ), 
+            html.Br(),                        
+                                       
+            dcc.Graph(id='graph_distribution_surveys_NEST',figure = figAnzahlFrageBogenProTypology),
+                    
+        ],
+        className="border-start border-danger border-5",
+       
+    ),
+    className="m-2 shadow bg-white rounded h-100 class",
+)
+
+
+card_HeatMap = dbc.Card(
+    dbc.CardBody(
+        [
+            html.H2([html.I(className="bi bi-reception-4 me-2"), "Heatmap NEST Score"], className=" text-center"),
+            html.Br(),
+            #html.Div(id='map'),
+            
+            dcc.Graph(id='heatMap_mapbox',figure = figHeatMap),
                     
         ],
         className="border-start border-danger border-5",
@@ -572,13 +612,13 @@ layout = html.Div(
                         ), 
                        
                                 
-                    ], width={"size": 2}
+                    ], width={"size": 3, "offset":0}
                 ),
                 dbc.Col(
                     [
                         card_UpdateMapScatterMapbox,
                                 
-                    ], width={"size": 10}
+                    ], width={"size": 9}
                 ),
                 
                     
@@ -595,7 +635,14 @@ layout = html.Div(
                     [
                         card_BarPlot, 
                         
-                    ],width={"size": 8}
+                    ],width={"size": 6}
+                    
+                ),
+                dbc.Col(
+                    [
+                        card_HeatMap, 
+                        
+                    ],width={"size": 6}
                     
                 ),
                 
@@ -605,23 +652,226 @@ layout = html.Div(
         ),
               
         html.Br(),
-       
-
- 
         
-
-        # Erstelle einen Box Select, um Punkte auszuwählen
-        
-        #html.Div(id='select-box'),
-        
-        #dcc.Graph(id='box-select', figure={}),
+        html.Div(id='nest-score-select'),
     
        
-    
-        #html.Div(id='scatter-map'),
-    
-        #html.Div(id='box-plot'),
-        
     ]
 )
-#
+#####################################################################################
+@callback(
+    Output('graph_distribution_surveys_NEST', 'figure'),
+    Input('dropdown_distribution_surveys_NEST', 'value')
+)
+def update_graph(value):
+    if value == 'Fragebögen Typology':
+        
+        figAnzahlFrageBogenProTypology = px.bar(dfGroupBy, height=500)
+        return figAnzahlFrageBogenProTypology
+       
+    elif value == 'Streuung NEST pro Typology':
+        #dff = df[df.continent==value]
+        #fig = px.histogram(dff, x='country', y='lifeExp', histfunc='avg')
+        fig_boxplot = px.box(dfLangerFrageBogenNestScore, x='gstypology', y='Overall NEST score', title='NEST Score nach Typologie - Boxplot')
+        return fig_boxplot
+ 
+    return dash.no_update
+########################################################################################################################################
+@callback(
+    #Output('box-select', 'children', allow_duplicate=True),
+    Output('nest-score-select', 'children'),
+    Output('greenSpaceHack-Data', 'greenSpaceHackSelectedData'),
+    Input('scatter-mapbox', 'selectedData'),
+    prevent_initial_call=True
+)
+def update_box_select(selectedData):
+    if not selectedData:
+        # Wenn keine Daten ausgewählt wurden, zeige einen leeren Plot
+        return dash.no_update
+    else:
+        
+        
+        try:
+            
+            print(selectedData)
+            points = selectedData['points']
+            selected_df = pd.DataFrame(points)
+            
+            greenSpaceHackSelectedData =selected_df.to_dict()
+            print(selected_df.head())
+            # selected_df.info()
+            # print(selected_df['hovertext'])
+            # listHovertext= selected_df['customdata'].values.tolist()
+            # print(type(listHovertext))
+            # print(listHovertext)
+            
+            # #extraction der id aus Liste
+            # new_list = [list[0] for list in listHovertext]
+            
+            # print(new_list)
+            # #df = pd.DataFrame(data)
+            # #print(df.head())
+            
+            # boolean_series = dfLangerFrageBogenNestScore.id.isin(new_list)
+            # filtered_df = df[boolean_series]
+            # print(filtered_df)
+            
+            
+            #df_points = pd.DataFrame(selectedData)
+            
+            # Erstellen Sie eine neue Spalte 'extracted_id', die das erste Element von 'customdata' enthält
+            selected_df['extracted_id'] = selected_df['customdata'].apply(lambda x: x[0])
+
+            # Nun verwenden Sie die 'extracted_id' Spalte, um die entsprechenden Datensätze aus other_df zu filtern
+            filtered_data = dfLangerFrageBogenNestScore[dfLangerFrageBogenNestScore['id'].isin(selected_df['extracted_id'])]
+            
+            average_nest_score = selected_df['marker.size'].mean()
+
+            print(average_nest_score)
+            
+            #fig_select_nest_score = px.box(selected_df, y='marker.size', title='Boxplot der NEST Scores')
+            fig_select_nest_score = px.box(selected_df, y='marker.size', labels={'marker.size': 'NEST Score'}, title='Boxplot  NEST Scores')
+            
+            # Umstrukturierung der Daten für den Boxplot
+            df_long = filtered_data.melt(value_vars=['AM6', 'AM7'], var_name='Verschattungstyp', value_name='Antwort')
+
+            # Erstellen des Boxplots
+            fig_shadow = go.Figure()
+
+            # Hinzufügen der Boxplots für AM6 und AM7
+            fig_shadow.add_trace(go.Box(y=df_long[df_long['Verschattungstyp'] == 'AM6']['Antwort'], name='AM6'))
+            fig_shadow.add_trace(go.Box(y=df_long[df_long['Verschattungstyp'] == 'AM7']['Antwort'], name='AM7'))
+
+            # Hinzufügen von Dummy-Datenpunkten für die Legende
+            for value, label in zip([0.0, 1.0, 2.0, 3.0], ["Keine (habe aber welche erwartet)","Schlecht / Poor", "Ausreichend / Adequate /Keine (habe keine erwartet)", "Gut / Good"]):
+                fig_shadow.add_trace(go.Scatter(x=[None], y=[None], mode='markers',
+                                        marker=dict(size=10, color='rgba(0,0,0,0)'),
+                                        showlegend=True, name=f'{value}: {label}'))
+
+            # Anpassen des Layouts
+            fig_shadow.update_layout(title='Bewertungen für künstliche (AM6) und natürliche Verschattung (AM7)',
+                            boxmode='group')
+            
+            
+            
+            return html.Div(
+                [
+                    html.Br(),
+                    
+                    
+                    #html.H2([html.I(className="bi bi-reception-4 me-2"), "Test"], className=" text-center"),
+                    
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Card(
+                                        dbc.CardBody(
+                                            [
+                                                html.H5("NEST-Score für ausgewählten Bereich", className="card-title text-center"),
+                                                html.Br(),
+                                                dcc.Dropdown(
+                                                    id="dropdown_select_nest-score",
+                                                    options=['NEST-Boxplot', 'NEST-Score Scatter'],
+                                                    value='NEST-Boxplot',
+                                                ),
+                                                dcc.Graph(id='figure_select_nest_score', figure = fig_select_nest_score),
+                                                # html.Br(),
+                                            ],
+                                            className="border-start border-danger border-5",
+                                        ),
+                                        className="m-2 shadow bg-white rounded h-100 class",
+                                    ),  
+                                ], 
+                                width=6
+                            ),
+                            dbc.Col(
+                                [
+                                    dbc.Card(
+                                        dbc.CardBody(
+                                            [
+                                                html.H5("Verschattung für ausgewählten Bereich", className="card-title text-center"),
+                                                html.Br(),
+                                                # # dcc.Dropdown(
+                                                # #     id="dropdown_select_shadow",
+                                                # #     options=['Boxplot-Verschattung', 'Scatter-Plot', ],
+                                                # #     value='Boxplot-Verschattung',
+                                                # # ),
+                                                dcc.Graph(id='fig_select_shadow', figure = fig_shadow),
+                                                # #html.Br(),
+                                            ],
+                                            className="border-start border-danger border-5",
+                                        ),
+                                        className="m-2 shadow bg-white rounded h-100 class",
+                                    ),  
+                                ], 
+                                width=6
+                            ),
+                        ]
+                    ),
+
+                    html.Br(),
+                    html.Br(), 
+                ]
+            ), greenSpaceHackSelectedData
+        except Exception as e:
+            print(e)
+            
+########################################################################################################
+@callback(
+    Output('figure_select_nest_score', 'figure'),
+    Input('dropdown_select_nest-score', 'value'),
+    Input('greenSpaceHack-Data', 'greenSpaceHackSelectedData'),
+    prevent_initial_call=True
+    
+)
+def update_figure_select_nest_score(value, greenSpaceHackSelectedData):
+    
+    print(greenSpaceHackSelectedData)
+    dfSelectNestScore = pd.DataFrame(greenSpaceHackSelectedData)
+    
+    print(dfSelectNestScore)
+    # Zählen, wie oft jede Art als bedroht, invasiv oder einheimisch markiert wurde
+   
+    if value != '':
+        
+        if value == 'NEST-Boxplot':
+            #Filter threatened Species
+            fig_select_nest_score = px.box(dfSelectNestScore, y='marker.size', labels={'marker.size': 'NEST Score'}, title='Boxplot  NEST Scores')
+           
+        elif value == 'NEST-Score Scatter':
+            fig_select_nest_score = px.scatter(dfSelectNestScore, y='marker.size', title='Scatterplot NEST Scores')
+        
+        return fig_select_nest_score
+       
+    
+    return dash.no_update
+
+########################################################################################################
+# @callback(
+#     Output('fig_select_shadow', 'figure'),
+#     Input('dropdown_select_shadow', 'value'),
+#     Input('greenSpaceHack-Data', 'greenSpaceHackSelectedData_01'),
+#     prevent_initial_call=True
+    
+# )
+# def update_figure_select_shadow(value, greenSpaceHackSelectedData_01):
+    
+#     df = pd.DataFrame(greenSpaceHackSelectedData_01)
+    
+#     # Zählen, wie oft jede Art als bedroht, invasiv oder einheimisch markiert wurde
+   
+#     if value != '':
+        
+#         if value == 'NEST-Boxplot':
+#             #Filter threatened Species
+#             fig_select_nest_score = px.box(df, y='marker.size', title='Boxplot  NEST Scores')
+           
+#         elif value == 'NEST-Score Scatter':
+#             fig_select_nest_score = px.scatter(df, y='marker.size', title='Scatterplot NEST Scores')
+        
+#         return fig_select_nest_score
+       
+    
+#     return dash.no_update
+                 

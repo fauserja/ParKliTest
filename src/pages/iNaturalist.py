@@ -28,12 +28,99 @@ import json
 from pandas import json_normalize
 from geopy.geocoders import Nominatim
 import pyproj
+import time
+import psycopg2
+from configparser import ConfigParser
+
+
 
 dash.register_page(__name__,
                    path='/biodiversity',  # represents the url text
                    name='Biodiversity',  # name of page, commonly used as name of link
                    title='ParKli Biodiversity'  # epresents the title of browser's tab
 )
+
+
+
+
+########################################################################################################################################################
+def download_data_from_postgresql(min_lat, max_lat, min_lon, max_lon):
+    """
+    Lädt Beobachtungsdaten aus der PostgreSQL-Datenbank basierend auf einem geografischen Bereich herunter.
+
+    :param min_lat: Minimale Breitengradgrenze des Bereichs.
+    :param max_lat: Maximale Breitengradgrenze des Bereichs.
+    :param min_lon: Minimale Längengradgrenze des Bereichs.
+    :param max_lon: Maximale Längengradgrenze des Bereichs.
+    :param connection_details: Ein Dictionary mit den Verbindungsdetails zur Datenbank.
+    :return: Ein pandas DataFrame mit den heruntergeladenen Daten.
+    """
+    
+     # Pfad des aktuellen Skripts
+    current_script_path = os.path.dirname(__file__)
+
+        # Pfad zum Basisverzeichnis des Projekts
+    base_directory_path = os.path.dirname(current_script_path)
+
+        # Pfad zur config.ini im lib-Ordner
+    config_file_path = os.path.join(base_directory_path, 'lib', 'config.ini')
+
+    # Konfigurationsdatei lesen
+    config = ConfigParser()
+    config.read(config_file_path)
+    
+    # Zugriff auf die Konfigurationswerte
+    dbname = config.get('database', 'dbname')
+    user = config.get('database', 'user')
+    password = config.get('database', 'password')
+    host = config.get('database', 'host')
+    port = config.get('database', 'port')
+    
+    connection_details = {
+        'dbname': config.get('database', 'dbname'),
+        'user': config.get('database', 'user'),
+        'password': config.get('database', 'password'),
+        'host': config.get('database', 'host'),
+        'port': config.get('database', 'port')
+    }
+    
+    
+    # Verbindung zur Datenbank aufbauen
+    try:
+        conn = psycopg2.connect(
+            dbname=connection_details['dbname'],
+            user=connection_details['user'],
+            password=connection_details['password'],
+            host=connection_details['host'],
+            port=connection_details['port']
+        )
+        cursor = conn.cursor()
+        
+        # SQL-Abfrage vorbereiten
+        query = f"""
+        SELECT * FROM inaturalist_observations
+        WHERE latitude BETWEEN %s AND %s
+        AND longitude BETWEEN %s AND %s;
+        """
+        
+        # SQL-Abfrage ausführen
+        cursor.execute(query, (min_lat, max_lat, min_lon, max_lon))
+        
+        # Ergebnisse abrufen
+        rows = cursor.fetchall()
+        colnames = [desc[0] for desc in cursor.description]
+        df = pd.DataFrame(rows, columns=colnames)
+        
+        # Ressourcen freigeben
+        cursor.close()
+        conn.close()
+        
+        return df
+    
+    except Exception as e:
+        print("Fehler beim Herunterladen der Daten:", e)
+        return pd.DataFrame()  # Leeres DataFrame bei Fehler
+
 
 ##########################################################################################################################################
 
@@ -55,6 +142,10 @@ def download_inaturalist_data(min_lat, max_lat, min_lon, max_lon):
     all_observations = []
 
     while True:
+        
+        if page > 5:
+            break
+        
         # Setzen Sie die API-Endpunkt-URL mit den entsprechenden Parametern
         url = f'https://api.inaturalist.org/v1/observations?swlat={swlat}&swlng={swlng}&nelat={nelat}&nelng={nelng}&page={page}&per_page=200'
 
@@ -82,11 +173,11 @@ def download_inaturalist_data(min_lat, max_lat, min_lon, max_lon):
     print(f'Anzahl der heruntergeladenen Beobachtungen: {observation_count}')
     
     df = pd.json_normalize(all_observations)
-    df[['lat', 'lon']] = df['location'].str.split(',', expand=True)
+    df[['latitude', 'longitude']] = df['location'].str.split(',', expand=True)
 
     # Datentypen der neuen Spalten korrigieren
-    df['lat'] = df['lat'].astype(float)
-    df['lon'] = df['lon'].astype(float)
+    df['latitude'] = df['latitude'].astype(float)
+    df['longitude'] = df['longitude'].astype(float)
     df.head()
     print(len(df))
     return df 
@@ -117,12 +208,12 @@ card_Location = dbc.Card(
             html.H2([html.I(className="bi bi-geo-alt me-2"), "Untersuchungsort"], className="text-nowrap text-center pe-2"),
             #dbc.FormText("Geben Sie den Namen der Stadt ein", className="text-nowrap", style={'width': '300px'}),
             #dbc.Input(id='city-input',persistence=True, placeholder="Geben Sie ein Namen einer Stadt ein...", type="text", style={'width': '300px'}),
-            dbc.FormText("Geben Sie den Namen einer Stadt ein", className="text-nowrap w-auto col-md-6"),
-            dbc.Input(id='city-input',persistence=True, placeholder="Stadt...", type="text", className="form-control col-md-6", style={'width': '200px'}),
+            dbc.FormText("Geben Sie den Namen einer Stadt ein", className="w-auto col-md-6"),
+            dbc.Input(id='city-input',persistence=False, placeholder="Stadt...", type="text", className="form-control col-md-6", style={'width': '200px'}),
             
             #dbc.FormText("Legen Sie den Suchradius in ° schrittweite 0.01 fest",className="text-nowrap", style={'width': '300px'}),
             #dbc.Input(id='latLon-input',placeholder='0.05', type="number", min=0, max=1, step=0.01, value='0.05', style={'width': '300px'}),
-            dbc.FormText("Legen Sie den Suchradius in ° schrittweite 0.01 fest",className="text-nowrap w-auto col-md-6"),
+            dbc.FormText("Legen Sie den Suchradius in ° schrittweite 0.01 fest",className="w-auto col-md-6"),
             dbc.Input(id='latLon-input',placeholder='0.02', type="number", min=0, max=1, step=0.01, value='0.02', className="form-control col-md-6", style={'width': '200px'}),
             html.Br(),
             #html.Button('Daten herunterladen', id='download-button', n_clicks=0),
@@ -156,70 +247,11 @@ card_UpdateMap = dbc.Card(
 ################################################################################################################################################
 def layout(data = dcc.Store(id='memory-output'), selectedDataState= dcc.Store(id='selectedData-State')):
     
-    print(data)
-    print(type(data))
+    # print(data)
+    # print(type(data))
     
-    if data and selectedDataState:
-    
-        return html.Div(
-            [
-                dbc.Row(
-                    [
-                        dbc.Col(
-                        [
-                            html.H1("ParKli Biodiversität", style={'textAlign': 'center', 'color': '#2F5F53'}),
-                        ], width=12
-                    )
-                ]),
-                
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                card_Location,
-                                
-                            ], width={"size": 2, "offset":0}
-                        ),
-                        dbc.Col(
-                            [
-                               card_UpdateMap,
-                                
-                            ], width={"size": 10, "offset":0}
-                        )
-                
-                    
-                    ]
-                ),
-              
-                html.Br(),
-                html.Br(),
-                html.Br(), 
-                
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [   
-                                #html.Div(id='map'),
-                                dcc.Graph(id='map', figure={}),
-                            ], width=12
-                        )
-                    ]
-                ),
-                
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                html.Div(id='box-select'),
-                            ], width=12
-                        )
-                    ]
-                ),  
-        
-            ]
-        )
-    else:
-        return html.Div(
+ 
+    return html.Div(
             [
                 dbc.Row(
                     [
@@ -293,16 +325,16 @@ def layout(data = dcc.Store(id='memory-output'), selectedDataState= dcc.Store(id
     State('city-input', 'value'),
     State('latLon-input', 'value'),
     State('memory-output', 'data'),
-    prevent_initial_call=True
+    prevent_initial_call=False
 )
 def update_map(n_clicks, city, latLonCorrection, data):
     
-    print(data)
-    print(type(data))
+    #print(data)
+    #print(type(data))
     
     if n_clicks > 0 and city:
         # Längen- und Breitengrade der Stadt finden
-        geolocator = Nominatim(user_agent='my_app')
+        geolocator = Nominatim(user_agent='ParKli.de')
         location = geolocator.geocode(city, language='de')
         
         if location is None:
@@ -311,7 +343,7 @@ def update_map(n_clicks, city, latLonCorrection, data):
         lat = location.latitude
         lon = location.longitude
         
-        print(type(latLonCorrection))
+        #print(type(latLonCorrection))
         
         latLonCorrection = float(latLonCorrection) 
         
@@ -321,14 +353,27 @@ def update_map(n_clicks, city, latLonCorrection, data):
         min_lon = lon - latLonCorrection
         max_lon = lon + latLonCorrection
         
+        locationBW = geolocator.geocode(city, addressdetails=True)
+        
+        if locationBW and 'address' in locationBW.raw:
+            address = locationBW.raw['address']
+            # Überprüfen, ob das 'state'-Feld in der Adresse vorhanden ist und 'Baden-Württemberg' entspricht
+            if 'state' in address and address['state'] == 'Baden-Württemberg':
+                obersvation = download_data_from_postgresql(min_lat, max_lat, min_lon, max_lon)
+            else:
+                obersvation = download_inaturalist_data(min_lat, max_lat, min_lon, max_lon)
+        
+        
         # iNaturalist-Daten herunterladen
-        obersvation = download_inaturalist_data(min_lat, max_lat, min_lon, max_lon)
+        #
         
         data=obersvation.to_dict('records')
         
+        
+        fig={}
         fig = px.scatter_mapbox(obersvation, 
-            lat="lat", 
-            lon="lon",
+            lat="latitude", 
+            lon="longitude",
             hover_name="taxon.preferred_common_name",
             hover_data=["id","taxon.preferred_common_name", "time_observed_at", "place_guess", 'quality_grade'],
             color_discrete_sequence=["black"],
@@ -343,8 +388,75 @@ def update_map(n_clicks, city, latLonCorrection, data):
         #return fig
     elif data:
         print('Test')
+        dash.no_update
     
     return dash.no_update
+
+# # Callback-Funktion für das Herunterladen der iNaturalist-Daten und Aktualisierung der Scattermapbox
+# @callback(
+#     #Output('map', 'figure', allow_duplicate=True),
+#     Output('map', 'figure'),
+#     Output('memory-output', 'data'),
+#     Input('download-button', 'n_clicks'),
+#     State('city-input', 'value'),
+#     State('latLon-input', 'value'),
+#     State('memory-output', 'data'),
+#     prevent_initial_call=True
+# )
+# def update_map(n_clicks, city, latLonCorrection, data):
+    
+#     #print(data)
+#     #print(type(data))
+    
+#     if n_clicks > 0 and city:
+#         # Längen- und Breitengrade der Stadt finden
+#         geolocator = Nominatim(user_agent='my_app')
+#         location = geolocator.geocode(city, language='de')
+        
+#         if location is None:
+#             return fig
+        
+#         lat = location.latitude
+#         lon = location.longitude
+        
+#         #print(type(latLonCorrection))
+        
+#         latLonCorrection = float(latLonCorrection) 
+        
+#         # Bereich für iNaturalist-Daten berechnen (z.B. 0.1 Grad um den ausgewählten Punkt)
+#         min_lat = lat - latLonCorrection
+#         max_lat = lat + latLonCorrection
+#         min_lon = lon - latLonCorrection
+#         max_lon = lon + latLonCorrection
+        
+#         # iNaturalist-Daten herunterladen
+#         obersvation = download_inaturalist_data(min_lat, max_lat, min_lon, max_lon)
+        
+#         data=obersvation.to_dict('records')
+        
+        
+#         fig={}
+#         fig = px.scatter_mapbox(obersvation, 
+#             lat="lat", 
+#             lon="lon",
+#             hover_name="taxon.preferred_common_name",
+#             hover_data=["id","taxon.preferred_common_name", "time_observed_at", "place_guess", 'quality_grade'],
+#             color_discrete_sequence=["black"],
+#             zoom=10, height=300
+#         )
+#         #fig.update_layout(mapbox_style="stamen-terrain")
+#         fig.update_layout(mapbox_style="open-street-map")
+#         fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+         
+#         #return html.Div([ dcc.Graph(figure = fig)]), data     
+#         return fig, data
+#         #return fig
+#     elif data:
+#         print('Test')
+    
+#     return dash.no_update
+
+
 #########################################################################################################################################
 # Callback-Funktion für den Box Select
 @callback(
@@ -436,8 +548,8 @@ def update_box_select(selectedData, data, selectedDataState):
             
             figSpecies = px.scatter_mapbox(
                 filtered_df, 
-                lat="lat", 
-                lon="lon",
+                lat="latitude", 
+                lon="longitude",
                 hover_name="taxon.preferred_common_name",
                 hover_data=["taxon.preferred_common_name", "time_observed_at", "place_guess", 'quality_grade'],
                 color="taxon.preferred_common_name",
@@ -456,7 +568,7 @@ def update_box_select(selectedData, data, selectedDataState):
             fig_taxonCounts_qualityGrade = px.pie(iconic_taxon_counts, 
                     names=iconic_taxon_counts.index, 
                     values=iconic_taxon_counts.values, 
-                    title='Verteilung der Beobachtungen nach Spezieskategorien',
+                    title='Verteilung Spezieskategorien',
                     labels={'names': 'Kategorie', 'values': 'Anzahl der Beobachtungen'})
             # Anpassen der Textanzeige
             fig_taxonCounts_qualityGrade.update_traces(textposition='inside', textinfo='percent+label')
@@ -803,7 +915,7 @@ def update_taxonCounts_qualityGrade(value, selectedDataState):
         fig_taxonCounts_qualityGrade = px.pie(iconic_taxon_counts, 
                     names=iconic_taxon_counts.index, 
                     values=iconic_taxon_counts.values, 
-                    title='Verteilung der Beobachtungen nach Spezieskategorien',
+                    title='Verteilung Spezieskategorien',
                     labels={'names': 'Kategorie', 'values': 'Anzahl der Beobachtungen'})
         # Anpassen der Textanzeige
         fig_taxonCounts_qualityGrade.update_traces(textposition='inside', textinfo='percent+label')
@@ -898,8 +1010,8 @@ def update_map_overview_invasive_threatened_species(value, selectedDataState):
         
         figSpecies = px.scatter_mapbox(
                 df, 
-                lat="lat", 
-                lon="lon",
+                lat="latitude", 
+                lon="longitude",
                 hover_name="taxon.preferred_common_name",
                 hover_data=["taxon.preferred_common_name", "time_observed_at", "place_guess", 'quality_grade'],
                 color="taxon.preferred_common_name",

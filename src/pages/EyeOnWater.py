@@ -367,7 +367,9 @@ layout = html.Div(
                     [
                         card_Upload, 
                                 
-                    ], width={"size": 3, "offset":0}
+                    ], 
+                    width={"size": 3, "offset":0}
+                    #xs=2, sm=2, md=3, lg=3, xl=3, xxl=3
                 ),
                 dbc.Col(
                     [

@@ -144,7 +144,6 @@ app.layout = dbc.Container([
         dcc.Store(id='cleanedEyeOnWater-Data', storage_type='session', data={}), 
         dcc.Store(id='unCleanedEyeOnWater-Data', storage_type='session', data={}), 
         dcc.Store(id='greenSpaceHack-Data', storage_type='session', data={}),
-         
        
 ], fluid=True)
 
